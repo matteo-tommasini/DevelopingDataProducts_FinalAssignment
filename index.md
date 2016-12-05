@@ -60,6 +60,6 @@ this information is provided in the user interface. Moreover, the relevant infor
 ## 4 Amiens   49°90'     2°30' 133.9 km
 ```
 
-Note that the package Leaflet uses the standard [Equirectangular projection](https://en.wikipedia.org/wiki/List_of_map_projections), which does not represent faithfully the Earth's surface near the North and South Poles. This creates no problems for the computation of the distances using the Haversine formula, but results in strange behaviours near the Poles (that is, points **apparently** very far away on the map, but with very small computed distance between them).
+Note that the package Leaflet uses the standard [Equirectangular projection](https://en.wikipedia.org/wiki/List_of_map_projections), which does not represent faithfully the Earth's surface near the North and South Poles (however, this creates no problems for the computation of the distances using the Haversine formula).
 
-Further resources: [shinyApp on shinyapps.io](), [code on github]().
+Further resources: [shinyApp on shinyapps.io](https://matteo-tommasini.shinyapps.io/Final_assignment_Developing_Data_Products/), [code on github](https://github.com/matteo-tommasini/DevelopingDataProducts/tree/gh-pages/final_assignment).
