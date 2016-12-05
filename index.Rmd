@@ -1,0 +1,164 @@
+---
+title       : Final assignment of the Developing Data Products course on Coursera
+subtitle    : 5 December 2016
+author      : Matteo Tommasini
+job         : 
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+---
+
+## Description of the project
+
+1. The current project promts the user to choose a point on a map and how many nearby cities to select. The database of the cities that we use is available under MIT license at [simplemaps.com](http://simplemaps.com/resources/world-cities-data) and contains "over 7,300 cities from around the world, including all country/province capitals, major cities and towns, as well as smaller towns in sparsely inhabited regions".
+2. For each such city, the database contains (among other data) its latitude and longitude, so the correct way of computing distances in this app is via the so called
+[Haversine formula](https://en.wikipedia.org/wiki/Haversine_formula)
+
+$$latex d = 2 r \operatorname{arcsin}\left({\sqrt{\operatorname{sin}^2\left(\frac{\varphi_2 - \varphi_1}{2}\right)+\operatorname{cos}(\varphi_1)\operatorname{cos}(\varphi_2)\operatorname{sin}^2\left(\frac{\lambda_2 - \lambda_1}{2}\right)}}\right) $$
+  
+where:
+
+- d is the distance between any two given points on the surface of the Earth;
+
+- R is the radius of the Earth; $latex (\varphi_1,\lambda_1)$ are the latitude and longitude of the first point and analogously for the second one.
+
+--- .class #id 
+
+## Computations
+
+1. The functions $latex \operatorname{sin}$, $latex \operatorname{cos}$ and $latex \operatorname{arcsin}$ are all available in standard R, but we have to use them properly, i.e. giving as argument latitudes and longitudes in radians, not in grads. So after loading the data frame in memory, we have to add two additional columns with the coordinates in radians.
+
+2. Since the computation of the Haversine formula is resource demanding, we retain for further analysis only the points in the data frame whose latitude and longitude is not too far away from the one given by the user while clicking any point of the map.
+
+3. The resulting distances are sorted, and only the closest cities are displayed on the map. The user can select any number of cities to show between 2 and 30.
+
+Since this presentation does not make use of a Shiny server, in the next slide we have selected
+a particular latitude and longitude in France (namely (49°59', 3°20')), and we apply our algorithm only to that particular pair.
+
+---
+
+## Demo
+
+```{r, echo=FALSE, fig.width = 10 }
+library(leaflet)
+
+# in the real shinyApp, the next 2 data are obtained as input (click on the map) from the user
+lat <- 49.59;   lng <- 3.20
+
+lat.rad <- lat * pi/180
+lng.rad <- lng * pi/180
+
+cities <- read.csv('world_cities.csv')
+n <- dim(cities)[1]
+# The fields for latitude and longitude in the data frame are in degrees, we have to convert them in radians.
+cities$lat.rad <- cities$lat * pi/180
+cities$lng.rad <- cities$lng * pi/180
+
+# Compute latitude and longitude in grads and minutes.
+
+coord <- c(lat, lng)
+coord.grads <- floor(coord)
+coord.minutes <- round(coord - coord.grads, 2) * 100
+coord.grad.minutes <- paste(coord.grads, '°', coord.minutes, "'", sep = '')
+
+
+message <- paste('The point that you chose has latitude ', coord.grad.minutes[1], ' and longitude ', coord.grad.minutes[2], '.', sep = '')
+# HTML(paste('', message, sep = '<br/>'))
+
+select <- rep(FALSE,n)  # Logical vector used later to select cities.
+dist <- numeric(n)      # Numeric vector storing the distances.
+names(dist) <- 1:n      # Names for the previous vector.
+
+for(i in 1:n){
+  lat2 <- cities$lat[i]
+  lng2 <- cities$lng[i]
+  lat2.rad <- cities$lat.rad[i]
+  lng2.rad <- cities$lng.rad[i]
+  
+  if(lat-lat2 > 0)
+    check.lat <- (lat - lat2) %% 360
+  else
+    check.lat <- (lat2 - lat) %% 360
+  
+  if(lng-lng2 > 0)
+    check.lng <- (lng - lng2) %% 360
+  else
+    check.lng <- (lng2 - lng) %% 360
+  
+  # Checks only the cities whose latitude and longitude differ for at most 1/10 * 360° from the selected spot.
+  if(check.lat < 36  &  check.lng < 36){
+    # Implement the formula for the distance from https://en.wikipedia.org/wiki/Haversine_formula
+    quad <- sin((lat2.rad-lat.rad)/2)^2 + cos(lat.rad)*cos(lat2.rad)*(sin((lng.rad-lng2.rad)))^2
+    R <- 6373  # R = radius of the Earth in km.
+    dist[i] <- 2 * R * asin(sqrt(quad))
+    # Select only the points not too far away from the selected spot.
+    if (dist[i] < 10000) select[i] <- TRUE 
+  }
+}
+
+
+
+# Sorts the distances and select only the closest cities.
+sort.dist <- sort(dist[select])
+
+# n.obj <- input$number.objects   # Number of cities to retrieve.
+# In the real shinyApp, this number is obtained as input (on a slider) from the user
+n.obj <- 4
+
+selected_cities <- as.numeric(names(sort.dist[1:n.obj]))
+selection <- cities[selected_cities,]
+
+# Creates the vectors Name and Distance for the final tables.
+Name <- as.character(selection$city_ascii)
+Distance <- paste(round(sort.dist[1:n.obj],1), ' km', sep = '')
+
+my_table <- data.frame(Name, lat = numeric(n.obj), lng = numeric(n.obj), Distance)
+
+# Converts the coordinates of the selected cities in grads and minutes.
+for(i in c("lat","lng") ){
+  coord.city = selection[[i]]
+  coord.city.grads <- sapply(coord.city,floor)
+  coord.city.minutes <- round(coord.city - coord.city.grads, 2) * 100
+  coord.city.grad.minutes <- paste(coord.city.grads, '°', coord.city.minutes, "'", sep = '')
+  my_table[[i]] <- paste(coord.city.grads, '°', coord.city.minutes, "'", sep = '')
+}
+
+names(my_table) <- c("Name", "Latitude", "Longitude", "Distance")
+#dim.table.left <- ceiling(n.obj/2)
+#dim.table.right <- n.obj - dim.table.left
+
+# in the real shinyApp, these 2 matrices are given as output with renderTable
+#table.left <- my_table[1:dim.table.left,]
+#table.right <- my_table[dim.table.left+1:dim.table.right,]
+
+m <- leaflet() %>%
+  addTiles() %>%
+  setView(lat = lat, lng = lng, zoom = 7) %>%
+  addPopups(lat = lat, lng = lng, popup = "Your choice")
+
+# Adds the marker of the selected cities on the map.
+for(i in 1:n.obj){
+  my_text <- as.character(selection$city_ascii[i])
+  m <- addPopups(m, lat = selection$lat[i], lng = selection$lng[i], popup = my_text)
+}
+
+m
+```
+
+--- 
+
+## Further information
+
+Since the user could be also interested on the exact locations that he/she selected on the map,
+this information is provided in the user interface. Moreover, the relevant information about the nearby cities is provided, for example:
+
+```{r, echo = FALSE}
+my_table
+```
+
+Note that the package Leaflet uses the standard [Equirectangular projection](https://en.wikipedia.org/wiki/List_of_map_projections), which does not represent faithfully the Earth's surface near the North and South Poles. This creates no problems for the computation of the distances using the Haversine formula, but results in strange behaviours near the Poles (that is, points **apparently** very far away on the map, but with very small computed distance between them).
+
+Further resources: [shinyApp on shinyapps.io](), [code on github]().

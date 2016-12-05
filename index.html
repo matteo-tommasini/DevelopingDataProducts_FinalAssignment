@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Final assignment of the Developing Data Products course on Coursera</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Final assignment of the Developing Data Products course on Coursera">
+  <meta name="author" content="Matteo Tommasini">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Final assignment of the Developing Data Products course on Coursera</h1>
+    <h2>5 December 2016</h2>
+    <p>Matteo Tommasini<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Description of the project</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol>
+<li>The current project promts the user to choose a point on a map and how many nearby cities to select. The database of the cities that we use is available under MIT license at <a href="http://simplemaps.com/resources/world-cities-data">simplemaps.com</a> and contains &quot;over 7,300 cities from around the world, including all country/province capitals, major cities and towns, as well as smaller towns in sparsely inhabited regions&quot;.</li>
+<li>For each such city, the database contains (among other data) its latitude and longitude, so the correct way of computing distances in this app is via the so called
+<a href="https://en.wikipedia.org/wiki/Haversine_formula">Haversine formula</a></li>
+</ol>
+
+<p>\[ d = 2 r \operatorname{arcsin}\left({\sqrt{\operatorname{sin}^2\left(\frac{\varphi_2 - \varphi_1}{2}\right)+\operatorname{cos}(\varphi_1)\operatorname{cos}(\varphi_2)\operatorname{sin}^2\left(\frac{\lambda_2 - \lambda_1}{2}\right)}}\right) \]</p>
+
+<p>where:</p>
+
+<ul>
+<li><p>d is the distance between any two given points on the surface of the Earth;</p></li>
+<li><p>R is the radius of the Earth; \( (\varphi_1,\lambda_1)\) are the latitude and longitude of the first point and analogously for the second one.</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="class" id="id" style="background:;">
+  <hgroup>
+    <h2>Computations</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol>
+<li><p>The functions \( \operatorname{sin}\), \( \operatorname{cos}\) and \( \operatorname{arcsin}\) are all available in standard R, but we have to use them properly, i.e. giving as argument latitudes and longitudes in radians, not in grads. So after loading the data frame in memory, we have to add two additional columns with the coordinates in radians.</p></li>
+<li><p>Since the computation of the Haversine formula is resource demanding, we retain for further analysis only the points in the data frame whose latitude and longitude is not too far away from the one given by the user while clicking any point of the map.</p></li>
+<li><p>The resulting distances are sorted, and only the closest cities are displayed on the map. The user can select any number of cities to show between 2 and 30.</p></li>
+</ol>
+
+<p>Since this presentation does not make use of a Shiny server, in the next slide we have selected
+a particular latitude and longitude in France (namely (49°59&#39;, 3°20&#39;)), and we apply our algorithm only to that particular pair.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:;">
+  <hgroup>
+    <h2>Demo</h2>
+  </hgroup>
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-1-1.png" alt="plot of chunk unnamed-chunk-1"></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:;">
+  <hgroup>
+    <h2>Further information</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Since the user could be also interested on the exact locations that he/she selected on the map,
+this information is provided in the user interface. Moreover, the relevant information about the nearby cities is provided, for example:</p>
+
+<pre><code>##     Name Latitude Longitude Distance
+## 1  Arras   50°28&#39;     2°78&#39;  97.5 km
+## 2  Lille   50°65&#39;      3°8&#39; 119.1 km
+## 3  Reims   49°25&#39;      4°3&#39; 125.9 km
+## 4 Amiens   49°90&#39;     2°30&#39; 133.9 km
+</code></pre>
+
+<p>Note that the package Leaflet uses the standard <a href="https://en.wikipedia.org/wiki/List_of_map_projections">Equirectangular projection</a>, which does not represent faithfully the Earth&#39;s surface near the North and South Poles. This creates no problems for the computation of the distances using the Haversine formula, but results in strange behaviours near the Poles (that is, points <strong>apparently</strong> very far away on the map, but with very small computed distance between them).</p>
+
+<p>Further resources: <a href="">shinyApp on shinyapps.io</a>, <a href="">code on github</a>.</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Description of the project'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Computations'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Demo'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Further information'>
+         4
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processEscapes: true
+      }
+    });
+  </script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script> -->
+  <script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="libraries/widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
